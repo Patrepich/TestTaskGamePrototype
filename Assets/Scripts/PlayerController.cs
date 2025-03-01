@@ -19,12 +19,21 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI scoreText;
     private int score = 0;
 
+    [Header("Sprites")]
+    [SerializeField] private Sprite upSprite;
+    [SerializeField] private Sprite downSprite;
+    [SerializeField] private Sprite rightSprite;
+    [SerializeField] private Sprite leftSprite;
+
+    private SpriteRenderer spriteRenderer;
+
     private Rigidbody2D rb;
 
     void Start()
     {
         currentMoveSpeed = startMoveSpeed;
 
+        spriteRenderer = GetComponent<SpriteRenderer>();
         rb = GetComponent<Rigidbody2D>();
 
         if (SystemInfo.supportsGyroscope && useGyro)
@@ -49,6 +58,36 @@ public class PlayerController : MonoBehaviour
                 currentMoveSpeed = startMoveSpeed;
             }
         }
+
+        float moveX = Input.GetAxisRaw("Horizontal");
+        float moveY = Input.GetAxisRaw("Vertical");
+
+        if (Mathf.Abs(moveX) > Mathf.Abs(moveY))
+        {
+            if (moveX > 0)
+            {
+                spriteRenderer.sprite = rightSprite;
+            }
+
+            else
+            {
+                spriteRenderer.sprite = leftSprite;
+            }
+        }
+
+        else
+        {
+            if (moveY > 0)
+            {
+                spriteRenderer.sprite = upSprite;
+            }
+
+            else
+            {
+                spriteRenderer.sprite = downSprite;
+            }
+        }
+
     }
 
     private Vector2 GetMovementInput()
