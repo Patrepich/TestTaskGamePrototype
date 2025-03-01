@@ -1,17 +1,18 @@
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
     [Header("Movement")]
     [SerializeField] float startMoveSpeed = 5f;
-
     [SerializeField] Joystick joystick;
 
-    [SerializeField] bool useGyro = false;
     [SerializeField] float gyroSensitivity = 2f;
 
+    [SerializeField] float accelerometerSensitivity = 0.5f;
+    [SerializeField] float accelerometerDeadZone = 0.1f;
+
+    [Header("Speed Boost")]
     private float currentMoveSpeed;
     private float speedBoostTimer = 0f;
 
@@ -26,88 +27,108 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Sprite leftSprite;
 
     private SpriteRenderer spriteRenderer;
-
     private Rigidbody2D rb;
+    private Vector3 calibratedOffset = Vector3.zero;
 
     void Start()
     {
         currentMoveSpeed = startMoveSpeed;
-
         spriteRenderer = GetComponent<SpriteRenderer>();
         rb = GetComponent<Rigidbody2D>();
 
-        if (SystemInfo.supportsGyroscope && useGyro)
+        InitializeSensors();
+    }
+
+    void InitializeSensors()
+    {
+        if (SystemInfo.supportsGyroscope)
         {
             Input.gyro.enabled = true;
         }
 
+        if (SystemInfo.supportsAccelerometer)
+        {
+            Input.compensateSensors = true;
+            CalibrateAccelerometer();
+        }
     }
 
     void Update()
     {
+        Movement();
+        SpriteDirection();
+        SpeedBoost();
+    }
+
+    void Movement()
+    {
         Vector2 input = GetMovementInput();
-
         rb.linearVelocity = input * currentMoveSpeed;
+    }
 
+    Vector2 GetMovementInput()
+    {
+        Vector2 keyboardInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")).normalized;
+
+        Vector2 gyroInput = GetGyroInput();
+        Vector2 joystickInput = new Vector2(joystick.Horizontal, joystick.Vertical);
+        Vector2 accelerometerInput = GetAccelerometerInput();
+
+        return (keyboardInput + gyroInput + joystickInput + accelerometerInput).normalized;
+    }
+
+    Vector2 GetGyroInput()
+    {
+        if (!Input.gyro.enabled) return Vector2.zero;
+
+        return new Vector2(Input.gyro.rotationRateUnbiased.z * gyroSensitivity, -Input.gyro.rotationRateUnbiased.x * gyroSensitivity);
+    }
+
+    Vector2 GetAccelerometerInput()
+    {
+        if (!SystemInfo.supportsAccelerometer) return Vector2.zero;
+
+        Vector3 rawAcceleration = Input.acceleration - calibratedOffset;
+
+        float x = Mathf.Abs(rawAcceleration.x) > accelerometerDeadZone ? rawAcceleration.x * accelerometerSensitivity : 0;
+        float y = Mathf.Abs(rawAcceleration.y) > accelerometerDeadZone ? rawAcceleration.y * accelerometerSensitivity : 0;
+
+        return new Vector2(x, y);
+    }
+
+    void SpriteDirection()
+    {
+        Vector2 velocity = rb.linearVelocity;
+
+
+        if (Mathf.Abs(velocity.x) > Mathf.Abs(velocity.y))
+        {
+            spriteRenderer.sprite = rightSprite;
+            spriteRenderer.flipX = velocity.x < 0;
+        }
+        else
+        {
+            spriteRenderer.sprite = velocity.y > 0 ? upSprite : downSprite;
+        }
+    }
+
+    void SpeedBoost()
+    {
         if (speedBoostTimer > 0)
         {
             speedBoostTimer -= Time.deltaTime;
-
             if (speedBoostTimer <= 0)
             {
                 currentMoveSpeed = startMoveSpeed;
             }
         }
-
-        float moveX = Input.GetAxisRaw("Horizontal");
-        float moveY = Input.GetAxisRaw("Vertical");
-
-        if (Mathf.Abs(moveX) > Mathf.Abs(moveY))
-        {
-            if (moveX > 0)
-            {
-                spriteRenderer.sprite = rightSprite;
-            }
-
-            else
-            {
-                spriteRenderer.sprite = leftSprite;
-            }
-        }
-
-        else
-        {
-            if (moveY > 0)
-            {
-                spriteRenderer.sprite = upSprite;
-            }
-
-            else
-            {
-                spriteRenderer.sprite = downSprite;
-            }
-        }
-
     }
 
-    private Vector2 GetMovementInput()
+    public void CalibrateAccelerometer()
     {
-        Vector2 keyboardInput = new Vector2(
-            Input.GetAxisRaw("Horizontal"),
-            Input.GetAxisRaw("Vertical")
-        ).normalized;
+        if (!SystemInfo.supportsAccelerometer) return;
 
-        Vector2 gyroInput = Vector2.zero;
-        if (useGyro && Input.gyro.enabled)
-        {
-            gyroInput = new Vector2(
-                Input.gyro.rotationRateUnbiased.z * gyroSensitivity,
-                -Input.gyro.rotationRateUnbiased.x * gyroSensitivity
-            );
-        }
-
-        Vector2 joystickInput = new Vector2(joystick.Horizontal, joystick.Vertical);
-        return (keyboardInput + gyroInput + joystickInput).normalized;
+        calibratedOffset = Input.acceleration;
     }
 
     public void AddScore(int value)
@@ -116,9 +137,9 @@ public class PlayerController : MonoBehaviour
         scoreText.text = $"Очки: {score}";
     }
 
-    public void ActivateSpeedBoost(float multiplayer, float duration)
+    public void ActivateSpeedBoost(float multiplier, float duration)
     {
-        currentMoveSpeed = startMoveSpeed * multiplayer;
+        currentMoveSpeed = startMoveSpeed * multiplier;
         speedBoostTimer = duration;
     }
 }
