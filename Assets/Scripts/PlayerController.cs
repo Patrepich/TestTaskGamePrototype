@@ -1,4 +1,6 @@
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
@@ -9,6 +11,10 @@ public class PlayerController : MonoBehaviour
 
     [SerializeField] bool useGyro = false;
     [SerializeField] float gyroSensitivity = 2f;
+
+    [Header("Score")]
+    [SerializeField] private TextMeshProUGUI scoreText;
+    private int score = 0;
 
     private Rigidbody2D rb;
 
@@ -46,11 +52,13 @@ public class PlayerController : MonoBehaviour
             );
         }
 
-        Vector2 joystickInput = new Vector2(
-            joystick.Horizontal,
-            joystick.Vertical
-        );
-
+        Vector2 joystickInput = new Vector2(joystick.Horizontal, joystick.Vertical);
         return (keyboardInput + gyroInput + joystickInput).normalized;
+    }
+
+        public void AddScore(int value)
+    {
+        score += value;
+        scoreText.text = $"Очки: {score}";
     }
 }
