@@ -5,12 +5,15 @@ using UnityEngine.UI;
 public class PlayerController : MonoBehaviour
 {
     [Header("Movement")]
-    [SerializeField] float moveSpeed = 5f;
+    [SerializeField] float startMoveSpeed = 5f;
 
     [SerializeField] Joystick joystick;
 
     [SerializeField] bool useGyro = false;
     [SerializeField] float gyroSensitivity = 2f;
+
+    private float currentMoveSpeed;
+    private float speedBoostTimer = 0f;
 
     [Header("Score")]
     [SerializeField] private TextMeshProUGUI scoreText;
@@ -20,6 +23,8 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
+        currentMoveSpeed = startMoveSpeed;
+
         rb = GetComponent<Rigidbody2D>();
 
         if (SystemInfo.supportsGyroscope && useGyro)
@@ -33,7 +38,17 @@ public class PlayerController : MonoBehaviour
     {
         Vector2 input = GetMovementInput();
 
-        rb.linearVelocity = input * moveSpeed;
+        rb.linearVelocity = input * currentMoveSpeed;
+
+        if (speedBoostTimer > 0)
+        {
+            speedBoostTimer -= Time.deltaTime;
+
+            if (speedBoostTimer <= 0)
+            {
+                currentMoveSpeed = startMoveSpeed;
+            }
+        }
     }
 
     private Vector2 GetMovementInput()
@@ -56,9 +71,15 @@ public class PlayerController : MonoBehaviour
         return (keyboardInput + gyroInput + joystickInput).normalized;
     }
 
-        public void AddScore(int value)
+    public void AddScore(int value)
     {
         score += value;
         scoreText.text = $"Очки: {score}";
+    }
+
+    public void ActivateSpeedBoost(float multiplayer, float duration)
+    {
+        currentMoveSpeed = startMoveSpeed * multiplayer;
+        speedBoostTimer = duration;
     }
 }
