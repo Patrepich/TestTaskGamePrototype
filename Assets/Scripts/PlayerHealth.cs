@@ -42,4 +42,15 @@ public class PlayerHealth : MonoBehaviour
                 Resources.Load<Sprite>("Sprites/Heart_Empty");
         }
     }
+
+    public bool CanHeal()
+    {
+        return currentLives < maxLives;
+    }
+
+    public void Heal()
+    {
+        currentLives++;
+        UpdateHeartsUI();
+    }
 }
