@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class PlayerHealth : MonoBehaviour
@@ -13,6 +14,23 @@ public class PlayerHealth : MonoBehaviour
     {
         currentLives = maxLives;
         UpdateHeartsUI();
+    }
+
+    public void TakeDamage(int damage)
+    {
+        currentLives -= damage;
+
+        UpdateHeartsUI();
+
+        if (currentLives <= 0)
+        {
+            Die();
+        }
+    }
+
+    private void Die()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     private void UpdateHeartsUI()

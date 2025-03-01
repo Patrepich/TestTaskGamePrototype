@@ -3,12 +3,12 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [Header("Movement")]
-    public float moveSpeed = 5f;
+    [SerializeField] float moveSpeed = 5f;
 
-    public Joystick joystick;
+    [SerializeField] Joystick joystick;
 
-    public bool useGyro = false;
-    public float gyroSensitivity = 2f;
+    [SerializeField] bool useGyro = false;
+    [SerializeField] float gyroSensitivity = 2f;
 
     private Rigidbody2D rb;
 
@@ -21,10 +21,6 @@ public class PlayerController : MonoBehaviour
             Input.gyro.enabled = true;
         }
 
-        if (!SystemInfo.supportsGyroscope)
-        {
-            Debug.Log("Гироскоп не поддерживается на этом устройстве!");
-        }
     }
 
     void Update()
